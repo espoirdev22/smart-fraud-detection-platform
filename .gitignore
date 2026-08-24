@@ -1,0 +1,30 @@
+# Data
+ml/data/raw/*.csv
+ml/data/processed/*.csv
+ml/mlruns/
+ml/models/*.pkl
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Env
+.env
+*.env.local
+
+# OS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker / logs
+*.log
