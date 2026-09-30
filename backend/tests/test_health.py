@@ -1,3 +1,5 @@
+import os
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -10,6 +12,10 @@ def test_health_check():
     assert response.json() == {"status": "ok"}
 
 
+@pytest.mark.skipif(
+    not os.path.exists("../ml/models/model_v1.pkl"),
+    reason="Modele non disponible dans cet environnement (ex: CI sans acces au fichier .pkl)"
+)
 def test_predict_normal_transaction():
     payload = {
         "type": "PAYMENT",
@@ -28,6 +34,10 @@ def test_predict_normal_transaction():
     assert 0 <= data["fraud_probability"] <= 1
 
 
+@pytest.mark.skipif(
+    not os.path.exists("../ml/models/model_v1.pkl"),
+    reason="Modele non disponible dans cet environnement (ex: CI sans acces au fichier .pkl)"
+)
 def test_predict_fraud_transaction():
     payload = {
         "type": "TRANSFER",
