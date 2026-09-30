@@ -14,7 +14,13 @@ pipeline {
 
         stage('Test Backend') {
             agent {
-                docker { image 'python:3.11-slim' }
+                docker {
+                    image 'python:3.11-slim'
+                    args '--network=host'
+                }
+            }
+            environment {
+                DATABASE_URL = 'sqlite:///./test.db'
             }
             steps {
                 dir('backend') {
