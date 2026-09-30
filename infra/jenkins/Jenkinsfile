@@ -15,21 +15,21 @@ pipeline {
         stage('Test Backend') {
             steps {
                 dir('backend') {
-                    bat 'pip install -r requirements.txt'
-                    bat 'python -m pytest tests/ -v'
+                    sh 'pip install -r requirements.txt'
+                    sh 'python -m pytest tests/ -v'
                 }
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                bat 'docker compose build'
+                sh 'docker compose build'
             }
         }
 
         stage('Deploy') {
             steps {
-                bat 'docker compose up -d'
+                sh 'docker compose up -d'
             }
         }
     }
