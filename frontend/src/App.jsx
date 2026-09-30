@@ -11,8 +11,22 @@ function getRiskLevel(probability) {
   return { label: "Risque faible", color: "safe" };
 }
 
+function getMainFactor(transaction) {
+  if (transaction.newbalanceOrig === 0) {
+    return "Facteur principal : le compte emetteur a ete entierement vide apres la transaction.";
+  }
+  if (transaction.amount > 200000) {
+    return "Facteur principal : montant de transaction eleve.";
+  }
+  if (transaction.type === "TRANSFER" || transaction.type === "CASH_OUT") {
+    return "Facteur principal : type de transaction a risque (TRANSFER ou CASH_OUT).";
+  }
+  return "Aucun facteur de risque majeur detecte.";
+}
+
 function App() {
   const [result, setResult] = useState(null);
+  const [lastTransaction, setLastTransaction] = useState(null);
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({ total: 0, fraudCount: 0, fraudRate: 0 });
 
@@ -42,8 +56,9 @@ function App() {
     loadData();
   }, []);
 
-  const handleResult = (newResult) => {
+  const handleResult = (newResult, transaction) => {
     setResult(newResult);
+    setLastTransaction(transaction);
     loadData();
   };
 
@@ -57,6 +72,14 @@ function App() {
           Detection de fraude mobile money — PaySim
         </p>
       </header>
+
+      <div className="bg-surface border-b border-border px-8 py-4">
+        <p className="text-muted text-sm max-w-3xl">
+          Cette IA analyse une transaction mobile money et evalue son niveau de risque
+          de fraude en temps reel. Le modele a ete entraine sur plus de 6 millions de
+          transactions simulees, avec un score de fiabilite de 0,97 (F1-score).
+        </p>
+      </div>
 
       <main className="px-8 py-10 max-w-5xl mx-auto space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -76,6 +99,11 @@ function App() {
                   </p>
                 </div>
                 <p className="mt-2 font-medium">{risk.label}</p>
+                {lastTransaction && (
+                  <p className="text-muted text-xs mt-3 text-center max-w-xs">
+                    {getMainFactor(lastTransaction)}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-muted text-sm self-start">

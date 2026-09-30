@@ -6,10 +6,7 @@ function TransactionForm({ onResult }) {
     type: "TRANSFER",
     amount: "",
     oldbalanceOrg: "",
-    newbalanceOrig: "",
     oldbalanceDest: "",
-    newbalanceDest: "",
-    step: 1,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,10 +18,7 @@ function TransactionForm({ onResult }) {
   const handleSubmit = async () => {
     setError("");
 
-    const numericFields = [
-      "amount", "oldbalanceOrg", "newbalanceOrig",
-      "oldbalanceDest", "newbalanceDest",
-    ];
+    const numericFields = ["amount", "oldbalanceOrg", "oldbalanceDest"];
 
     for (const field of numericFields) {
       const value = form[field];
@@ -34,35 +28,83 @@ function TransactionForm({ onResult }) {
       }
     }
 
+    const amount = parseFloat(form.amount);
+    const oldbalanceOrg = parseFloat(form.oldbalanceOrg);
+    const oldbalanceDest = parseFloat(form.oldbalanceDest);
+
+    if (amount > oldbalanceOrg) {
+      setError("Le montant ne peut pas depasser le solde disponible avant transaction.");
+      return;
+    }
+
     setLoading(true);
     const payload = {
-      ...form,
-      amount: parseFloat(form.amount),
-      oldbalanceOrg: parseFloat(form.oldbalanceOrg),
-      newbalanceOrig: parseFloat(form.newbalanceOrig),
-      oldbalanceDest: parseFloat(form.oldbalanceDest),
-      newbalanceDest: parseFloat(form.newbalanceDest),
-      step: parseInt(form.step) || 1,
+      type: form.type,
+      amount,
+      oldbalanceOrg,
+      newbalanceOrig: oldbalanceOrg - amount,
+      oldbalanceDest,
+      newbalanceDest: oldbalanceDest + amount,
+      step: 1,
     };
-    const result = await predictTransaction(payload);
-    onResult(result, payload);
+
+    try {
+      const result = await predictTransaction(payload);
+      onResult(result, payload);
+    } catch (err) {
+      setError(err.message);
+    }
     setLoading(false);
   };
 
   const fields = [
     { name: "amount", label: "Montant" },
     { name: "oldbalanceOrg", label: "Solde emetteur avant" },
-    { name: "newbalanceOrig", label: "Solde emetteur apres" },
     { name: "oldbalanceDest", label: "Solde destinataire avant" },
-    { name: "newbalanceDest", label: "Solde destinataire apres" },
   ];
+
+  const scenarios = [
+    {
+      label: "Cas de fraude typique",
+      values: {
+        type: "TRANSFER",
+        amount: "250000",
+        oldbalanceOrg: "250000",
+        oldbalanceDest: "0",
+      },
+    },
+    {
+      label: "Transaction normale",
+      values: {
+        type: "PAYMENT",
+        amount: "5000",
+        oldbalanceOrg: "50000",
+        oldbalanceDest: "0",
+      },
+    },
+  ];
+
+  const loadScenario = (values) => {
+    setForm({ ...form, ...values });
+    setError("");
+  };
 
   return (
     <div className="bg-surface border border-border rounded-lg p-6">
       <h2 className="font-mono text-sm text-muted uppercase tracking-wide mb-4">
         Simuler une transaction
       </h2>
-
+      <div className="flex gap-2 mb-2">
+        {scenarios.map((scenario) => (
+          <button
+            key={scenario.label}
+            onClick={() => loadScenario(scenario.values)}
+            className="flex-1 bg-border text-muted text-xs font-mono rounded px-2 py-2 hover:bg-opacity-70 transition"
+          >
+            {scenario.label}
+          </button>
+        ))}
+      </div>
       <div className="space-y-3">
         <select
           name="type"
@@ -91,9 +133,7 @@ function TransactionForm({ onResult }) {
           </div>
         ))}
 
-        {error && (
-          <p className="text-alert text-xs">{error}</p>
-        )}
+        {error && <p className="text-alert text-xs">{error}</p>}
 
         <button
           onClick={handleSubmit}
