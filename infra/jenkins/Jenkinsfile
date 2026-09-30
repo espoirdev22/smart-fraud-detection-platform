@@ -2,7 +2,11 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+        POSTGRES_USER = credentials('fraud-postgres-user')
+        POSTGRES_PASSWORD = credentials('fraud-postgres-password')
+        POSTGRES_DB = credentials('fraud-postgres-db')
+        DATABASE_URL = credentials('fraud-database-url')
+        MODEL_PATH = credentials('fraud-model-path')
     }
 
     stages {
@@ -38,6 +42,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
+                sh 'docker compose down || true'
                 sh 'docker compose up -d'
             }
         }
