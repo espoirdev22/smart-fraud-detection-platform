@@ -16,6 +16,13 @@ pipeline {
             }
         }
 
+        stage('Copy Model') {
+            steps {
+                sh 'mkdir -p ml/models'
+                sh 'cp /var/jenkins_home/persistent_models/model_v1.pkl ml/models/model_v1.pkl'
+            }
+        }
+
         stage('Test Backend') {
             agent {
                 docker {
