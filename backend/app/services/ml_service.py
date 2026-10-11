@@ -4,6 +4,7 @@ utilisee par les routers de l'API.
 """
 import joblib
 import pandas as pd
+import math 
 
 from app.core.config import settings
 
@@ -50,5 +51,52 @@ def build_features(transaction) -> pd.DataFrame:
 def predict(transaction) -> float:
     model = load_model()
     X = build_features(transaction)
-    probability = model.predict_proba(X)[0][1]
-    return float(probability)
+    return float(model.predict_proba(X)[0][1])
+
+
+def display_score(raw: float, temperature: float) -> float:
+    eps = 1e-12
+    p = min(max(raw, eps), 1 - eps)
+    logit = math.log(p / (1 - p))
+    return 1 / (1 + math.exp(-logit / temperature))
+
+_explainer = None
+
+FEATURE_LABELS = {
+    "step": "Moment de la transaction",
+    "type_encoded": "Type de transaction",
+    "amount": "Montant",
+    "oldbalanceOrg": "Solde emetteur avant",
+    "newbalanceOrig": "Solde emetteur apres",
+    "oldbalanceDest": "Solde destinataire avant",
+    "newbalanceDest": "Solde destinataire apres",
+    "errorBalanceOrig": "Mouvement de solde emetteur",
+    "errorBalanceDest": "Mouvement de solde destinataire",
+    "origBalanceEmptied": "Compte emetteur vide",
+    "hour_of_day": "Heure de la journee",
+}
+
+
+def get_explainer():
+    global _explainer
+    if _explainer is None:
+        import shap
+        _explainer = shap.TreeExplainer(load_model())
+    return _explainer
+
+
+def explain(transaction, top_n: int = 3):
+    X = build_features(transaction)
+    values = get_explainer().shap_values(X)
+    if isinstance(values, list):
+        values = values[1]
+    row = values[0]
+    pairs = sorted(zip(X.columns, row), key=lambda p: abs(p[1]), reverse=True)[:top_n]
+    return [
+        {
+            "feature": FEATURE_LABELS.get(name, name),
+            "impact": float(val),
+            "direction": "hausse" if val > 0 else "baisse",
+        }
+        for name, val in pairs
+    ]    

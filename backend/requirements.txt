@@ -10,3 +10,5 @@ pandas==2.2.2
 joblib==1.4.2
 pytest==8.2.2
 httpx2
+shap
+prometheus-fastapi-instrumentator

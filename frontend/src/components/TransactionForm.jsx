@@ -15,10 +15,14 @@ function TransactionForm({ onResult }) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const showDestField = form.type === "TRANSFER";
+
   const handleSubmit = async () => {
     setError("");
 
-    const numericFields = ["amount", "oldbalanceOrg", "oldbalanceDest"];
+    const numericFields = showDestField
+      ? ["amount", "oldbalanceOrg", "oldbalanceDest"]
+      : ["amount", "oldbalanceOrg"];
 
     for (const field of numericFields) {
       const value = form[field];
@@ -30,7 +34,7 @@ function TransactionForm({ onResult }) {
 
     const amount = parseFloat(form.amount);
     const oldbalanceOrg = parseFloat(form.oldbalanceOrg);
-    const oldbalanceDest = parseFloat(form.oldbalanceDest);
+    const oldbalanceDest = showDestField ? parseFloat(form.oldbalanceDest) : 0;
 
     if (amount > oldbalanceOrg) {
       setError("Le montant ne peut pas depasser le solde disponible avant transaction.");
@@ -60,7 +64,6 @@ function TransactionForm({ onResult }) {
   const fields = [
     { name: "amount", label: "Montant" },
     { name: "oldbalanceOrg", label: "Solde emetteur avant" },
-    { name: "oldbalanceDest", label: "Solde destinataire avant" },
   ];
 
   const scenarios = [
@@ -90,7 +93,7 @@ function TransactionForm({ onResult }) {
   };
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-6">
+    <div className="bg-surface border border-border border-t-2 border-t-safe rounded-lg shadow-card p-6">
       <h2 className="font-mono text-sm text-muted uppercase tracking-wide mb-4">
         Simuler une transaction
       </h2>
@@ -132,6 +135,20 @@ function TransactionForm({ onResult }) {
             />
           </div>
         ))}
+
+        {showDestField && (
+          <div>
+            <label className="text-muted text-xs">Solde destinataire avant</label>
+            <input
+              type="number"
+              name="oldbalanceDest"
+              value={form.oldbalanceDest}
+              onChange={handleChange}
+              placeholder="0"
+              className="w-full bg-bg border border-border rounded px-3 py-2 text-text font-mono text-sm mt-1"
+            />
+          </div>
+        )}
 
         {error && <p className="text-alert text-xs">{error}</p>}
 

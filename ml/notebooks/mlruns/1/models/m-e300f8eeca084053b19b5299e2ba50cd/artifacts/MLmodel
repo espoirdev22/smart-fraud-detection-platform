@@ -1,0 +1,23 @@
+artifact_path: file:c:/Users/Espoir/smart-fraud-detection-platform/ml/notebooks/mlruns/1/models/m-e300f8eeca084053b19b5299e2ba50cd/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.14.2
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.0
+    skops_trusted_types: null
+mlflow_version: 3.15.2
+model_id: m-e300f8eeca084053b19b5299e2ba50cd
+model_size_bytes: 12669
+model_uuid: m-e300f8eeca084053b19b5299e2ba50cd
+prompts: null
+run_id: 940a1c735b8d4594814ab31cbfc8156c
+utc_time_created: '2026-08-30 20:01:29.729022'
