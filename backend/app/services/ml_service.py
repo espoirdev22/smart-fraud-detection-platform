@@ -91,12 +91,15 @@ def explain(transaction, top_n: int = 3):
     if isinstance(values, list):
         values = values[1]
     row = values[0]
+    total = sum(abs(float(v)) for v in row) or 1.0
     pairs = sorted(zip(X.columns, row), key=lambda p: abs(p[1]), reverse=True)[:top_n]
     return [
         {
             "feature": FEATURE_LABELS.get(name, name),
             "impact": float(val),
             "direction": "hausse" if val > 0 else "baisse",
+            # part de ce facteur dans l'effet total (somme des |SHAP| de toutes les variables)
+            "share": round(abs(float(val)) / total, 4),
         }
         for name, val in pairs
-    ]    
+    ]

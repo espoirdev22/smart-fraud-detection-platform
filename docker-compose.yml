@@ -24,6 +24,7 @@ services:
       - "8000:8000"
     volumes:
       - ./ml/models:/app/ml_models:ro
+      - ./ml/mlruns.db:/app/mlflow/mlruns.db:ro
 
   frontend:
     build:

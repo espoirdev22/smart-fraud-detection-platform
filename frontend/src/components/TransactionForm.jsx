@@ -1,47 +1,42 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { predictTransaction } from "../services/api";
+import { Button, inputClass } from "./ui/Common";
 
-function TransactionForm({ onResult }) {
-  const [form, setForm] = useState({
-    type: "TRANSFER",
-    amount: "",
-    oldbalanceOrg: "",
-    oldbalanceDest: "",
-  });
-  const [loading, setLoading] = useState(false);
+const CITIES = ["Dakar", "Thiès", "Saint-Louis", "Touba", "Kaolack", "Ziguinchor", "Mbour", "Diourbel", "Louga", "Tambacounda"];
+const PHONE_RE = /^\+?[0-9 ]{8,20}$/;
+
+const SCENARIOS = [
+  { label: "Cas de fraude typique", values: { type: "TRANSFER", amount: "250000", oldbalanceOrg: "250000", oldbalanceDest: "0" } },
+  { label: "Transaction normale", values: { type: "PAYMENT", amount: "5000", oldbalanceOrg: "50000", oldbalanceDest: "0" } },
+];
+
+const empty = { type: "TRANSFER", phone: "+221 ", city: "Dakar", amount: "", oldbalanceOrg: "", oldbalanceDest: "0" };
+
+export default function TransactionForm({ onResult }) {
+  const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const showDest = form.type === "TRANSFER";
 
-  const handleChange = (e) => {
+  const change = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setError("");
   };
 
-  const showDestField = form.type === "TRANSFER";
+  const num = (v) => (v === "" ? NaN : Number(v));
 
-  const handleSubmit = async () => {
-    setError("");
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!PHONE_RE.test(form.phone.trim())) return setError("Numéro de téléphone invalide (ex. +221 77 123 45 67).");
+    const amount = num(form.amount);
+    const oldbalanceOrg = num(form.oldbalanceOrg);
+    const oldbalanceDest = showDest ? num(form.oldbalanceDest) : 0;
+    if (!(amount > 0)) return setError("Le montant doit être un nombre positif.");
+    if (!(oldbalanceOrg >= 0)) return setError("Le solde émetteur doit être un nombre valide.");
+    if (!(oldbalanceDest >= 0)) return setError("Le solde destinataire doit être un nombre valide.");
+    if (amount > oldbalanceOrg) return setError("Le montant ne peut pas dépasser le solde disponible avant transaction.");
 
-    const numericFields = showDestField
-      ? ["amount", "oldbalanceOrg", "oldbalanceDest"]
-      : ["amount", "oldbalanceOrg"];
-
-    for (const field of numericFields) {
-      const value = form[field];
-      if (value === "" || isNaN(Number(value)) || Number(value) < 0) {
-        setError(`Le champ "${field}" doit etre un nombre valide et positif.`);
-        return;
-      }
-    }
-
-    const amount = parseFloat(form.amount);
-    const oldbalanceOrg = parseFloat(form.oldbalanceOrg);
-    const oldbalanceDest = showDestField ? parseFloat(form.oldbalanceDest) : 0;
-
-    if (amount > oldbalanceOrg) {
-      setError("Le montant ne peut pas depasser le solde disponible avant transaction.");
-      return;
-    }
-
-    setLoading(true);
     const payload = {
       type: form.type,
       amount,
@@ -50,118 +45,73 @@ function TransactionForm({ onResult }) {
       oldbalanceDest,
       newbalanceDest: oldbalanceDest + amount,
       step: 1,
+      phone: form.phone.trim(),
+      location: `${form.city}, Sénégal`,
     };
-
+    setLoading(true);
     try {
-      const result = await predictTransaction(payload);
-      onResult(result, payload);
+      onResult(await predictTransaction(payload), payload);
     } catch (err) {
       setError(err.message);
     }
     setLoading(false);
   };
 
-  const fields = [
-    { name: "amount", label: "Montant" },
-    { name: "oldbalanceOrg", label: "Solde emetteur avant" },
-  ];
-
-  const scenarios = [
-    {
-      label: "Cas de fraude typique",
-      values: {
-        type: "TRANSFER",
-        amount: "250000",
-        oldbalanceOrg: "250000",
-        oldbalanceDest: "0",
-      },
-    },
-    {
-      label: "Transaction normale",
-      values: {
-        type: "PAYMENT",
-        amount: "5000",
-        oldbalanceOrg: "50000",
-        oldbalanceDest: "0",
-      },
-    },
-  ];
-
-  const loadScenario = (values) => {
-    setForm({ ...form, ...values });
-    setError("");
-  };
-
   return (
-    <div className="bg-surface border border-border border-t-2 border-t-safe rounded-lg shadow-card p-6">
-      <h2 className="font-mono text-sm text-muted uppercase tracking-wide mb-4">
-        Simuler une transaction
-      </h2>
-      <div className="flex gap-2 mb-2">
-        {scenarios.map((scenario) => (
+    <form onSubmit={submit} className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {SCENARIOS.map((s) => (
           <button
-            key={scenario.label}
-            onClick={() => loadScenario(scenario.values)}
-            className="flex-1 bg-border text-muted text-xs font-mono rounded px-2 py-2 hover:bg-opacity-70 transition"
+            type="button"
+            key={s.label}
+            onClick={() => { setForm({ ...form, ...s.values }); setError(""); }}
+            className="rounded-full border border-line px-3 py-1.5 text-xs text-ink hover:bg-canvas"
           >
-            {scenario.label}
+            {s.label}
           </button>
         ))}
       </div>
-      <div className="space-y-3">
-        <select
-          name="type"
-          value={form.type}
-          onChange={handleChange}
-          className="w-full bg-bg border border-border rounded px-3 py-2 text-text font-mono text-sm"
-        >
-          <option value="TRANSFER">TRANSFER</option>
-          <option value="CASH_OUT">CASH_OUT</option>
-          <option value="PAYMENT">PAYMENT</option>
-          <option value="CASH_IN">CASH_IN</option>
-          <option value="DEBIT">DEBIT</option>
-        </select>
 
-        {fields.map((field) => (
-          <div key={field.name}>
-            <label className="text-muted text-xs">{field.label}</label>
-            <input
-              type="number"
-              name={field.name}
-              value={form[field.name]}
-              onChange={handleChange}
-              placeholder="0"
-              className="w-full bg-bg border border-border rounded px-3 py-2 text-text font-mono text-sm mt-1"
-            />
-          </div>
-        ))}
-
-        {showDestField && (
-          <div>
-            <label className="text-muted text-xs">Solde destinataire avant</label>
-            <input
-              type="number"
-              name="oldbalanceDest"
-              value={form.oldbalanceDest}
-              onChange={handleChange}
-              placeholder="0"
-              className="w-full bg-bg border border-border rounded px-3 py-2 text-text font-mono text-sm mt-1"
-            />
-          </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Type de transaction">
+          <select name="type" value={form.type} onChange={change} className={inputClass}>
+            {["TRANSFER", "CASH_OUT", "PAYMENT", "CASH_IN", "DEBIT"].map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </Field>
+        <Field label="Numéro de téléphone">
+          <input name="phone" value={form.phone} onChange={change} placeholder="+221 77 123 45 67" className={inputClass} />
+        </Field>
+        <Field label="Ville">
+          <select name="city" value={form.city} onChange={change} className={inputClass}>
+            {CITIES.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </Field>
+        <Field label="Montant (FCFA)">
+          <input type="number" name="amount" value={form.amount} onChange={change} placeholder="0" className={inputClass} />
+        </Field>
+        <Field label="Solde émetteur avant (FCFA)">
+          <input type="number" name="oldbalanceOrg" value={form.oldbalanceOrg} onChange={change} placeholder="0" className={inputClass} />
+        </Field>
+        {showDest && (
+          <Field label="Solde destinataire avant (FCFA)">
+            <input type="number" name="oldbalanceDest" value={form.oldbalanceDest} onChange={change} placeholder="0" className={inputClass} />
+          </Field>
         )}
-
-        {error && <p className="text-alert text-xs">{error}</p>}
-
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full bg-alert text-bg font-mono text-sm font-semibold rounded px-3 py-2.5 mt-2 hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {loading ? "Analyse en cours..." : "Analyser la transaction"}
-        </button>
       </div>
-    </div>
+
+      {error && <p className="text-sm text-danger">{error}</p>}
+      <Button type="submit" disabled={loading} className="w-full py-2.5">
+        {loading ? <><Loader2 size={16} className="animate-spin" /> Analyse en cours...</> : "Analyser la transaction"}
+      </Button>
+    </form>
   );
 }
 
-export default TransactionForm;
+function Field({ label, children }) {
+  return (
+    <label className="block text-xs text-soft">
+      {label}
+      <div className="mt-1">{children}</div>
+    </label>
+  );
+}
