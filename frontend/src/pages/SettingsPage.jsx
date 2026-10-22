@@ -4,7 +4,7 @@ import { API_BASE_URL, getSettings, getSystemStatus, saveThresholds } from "../s
 import { fmtDateTime } from "../lib/format";
 import { Button, ErrorBanner, Panel, Pill, Spinner, inputClass } from "../components/ui/Common";
 
-export default function SettingsPage() {
+export default function SettingsPage({ canEdit }) {
   const { data, error, loading, reload } = useFetch(getSettings, []);
   const status = useFetch(getSystemStatus, []);
   const [verify, setVerify] = useState("0.5");
@@ -40,21 +40,22 @@ export default function SettingsPage() {
           <form onSubmit={save} className="grid max-w-xl gap-4">
             <label className="text-sm">
               Seuil de vérification (à vérifier à partir de)
-              <input className={`${inputClass} mt-1`} type="number" step="0.01" min="0" max="1" value={verify} onChange={(e) => setVerify(e.target.value)} />
+              <input className={`${inputClass} mt-1`} type="number" step="0.01" min="0" max="1" value={verify} disabled={!canEdit} onChange={(e) => setVerify(e.target.value)} />
             </label>
             <label className="text-sm">
               Seuil de blocage (fraude probable à partir de)
-              <input className={`${inputClass} mt-1`} type="number" step="0.01" min="0" max="1" value={block} onChange={(e) => setBlock(e.target.value)} />
+              <input className={`${inputClass} mt-1`} type="number" step="0.01" min="0" max="1" value={block} disabled={!canEdit} onChange={(e) => setBlock(e.target.value)} />
             </label>
             <p className="text-xs text-soft">
               Ces seuils s'appliquent à la probabilité brute du modèle (0 à 1), pas au score affiché. Valeurs d'origine : vérification {data.defaults.verify}, blocage {data.defaults.block}
               (seuil choisi pour minimiser le coût des erreurs). Le score affiché utilise une température de {data.score_temperature}.
             </p>
+            {!canEdit && <p className="text-xs text-warn">Seuls les superviseurs et les administrateurs peuvent modifier les seuils.</p>}
             {msg.ok && <p className="text-sm text-ok">{msg.ok}</p>}
             {msg.err && <p className="text-sm text-danger">{msg.err}</p>}
             <div className="flex gap-2">
-              <Button type="submit">Enregistrer</Button>
-              <Button type="button" variant="ghost" onClick={() => { setVerify(String(data.defaults.verify)); setBlock(String(data.defaults.block)); }}>
+              <Button type="submit" disabled={!canEdit}>Enregistrer</Button>
+              <Button type="button" variant="ghost" disabled={!canEdit} onClick={() => { setVerify(String(data.defaults.verify)); setBlock(String(data.defaults.block)); }}>
                 Valeurs d'origine
               </Button>
             </div>

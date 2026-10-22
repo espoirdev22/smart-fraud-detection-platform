@@ -18,6 +18,9 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       MODEL_PATH: ${MODEL_PATH}
+      SECRET_KEY: ${SECRET_KEY:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-salou@fraudguard.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMe123!}
     depends_on:
       - db
     ports:

@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { Bell, ChevronDown, Menu, Search } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
+import UserMenu from "./UserMenu";
 
-const initials = (name = "") =>
-  name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
-
-export default function Topbar({ user, alertCount, onSearch, onBell, onMenu, initialQuery = "" }) {
+export default function Topbar({ user, alertCount, onSearch, onBell, onMenu, onLogout, initialQuery = "" }) {
   const [q, setQ] = useState(initialQuery);
   useEffect(() => setQ(initialQuery), [initialQuery]);
 
@@ -37,16 +35,7 @@ export default function Topbar({ user, alertCount, onSearch, onBell, onMenu, ini
             </span>
           )}
         </button>
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-navy-900 text-xs font-semibold text-white">
-            {initials(user?.name)}
-          </span>
-          <div className="hidden text-left leading-tight sm:block">
-            <p className="text-sm font-medium">{user?.name || "—"}</p>
-            <p className="text-xs text-soft">{user?.role || ""}</p>
-          </div>
-          <ChevronDown size={16} className="hidden text-soft sm:block" />
-        </div>
+        <UserMenu user={user} onLogout={onLogout} />
       </div>
     </header>
   );

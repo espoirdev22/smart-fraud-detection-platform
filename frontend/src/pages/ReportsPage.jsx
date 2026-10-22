@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { Download, Printer } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import useFetch from "../hooks/useFetch";
-import { getReport, reportCsvUrl } from "../services/api";
+import { downloadReportCsv, getReport } from "../services/api";
 import { dec, fcfa, fmtDay, fmtDayShort, nf } from "../lib/format";
 import { Button, Empty, ErrorBanner, Panel, Spinner } from "../components/ui/Common";
 import DateRangePicker from "../components/dashboard/DateRangePicker";
 
 export default function ReportsPage({ range, onRange, refreshKey }) {
+  const [exportError, setExportError] = useState("");
+  const exportCsv = () => { setExportError(""); downloadReportCsv(range).catch((e) => setExportError(e.message)); };
   const { data, error, loading, reload } = useFetch(() => getReport(range), [range.start, range.end, refreshKey]);
   const t = data?.totals;
 
@@ -19,11 +22,11 @@ export default function ReportsPage({ range, onRange, refreshKey }) {
         </div>
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <DateRangePicker range={range} onChange={onRange} />
-          <a href={reportCsvUrl(range)}><Button variant="ghost"><Download size={15} /> Exporter en CSV</Button></a>
+          <Button variant="ghost" onClick={exportCsv}><Download size={15} /> Exporter en CSV</Button>
           <Button variant="ghost" onClick={() => window.print()}><Printer size={15} /> Imprimer / PDF</Button>
         </div>
       </div>
-      <ErrorBanner message={error} onRetry={reload} />
+      <ErrorBanner message={error || exportError} onRetry={reload} />
       {loading && !data ? <Spinner /> : data && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

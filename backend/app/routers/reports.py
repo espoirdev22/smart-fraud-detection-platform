@@ -4,6 +4,8 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends
+
+from app.core.deps import require_supervisor
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
@@ -16,7 +18,7 @@ from app.routers.dashboard import daily_series
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-@router.get("/summary")
+@router.get("/summary", dependencies=[Depends(require_supervisor)])
 def report_summary(start: Optional[date] = None, end: Optional[date] = None, db: Session = Depends(get_db)):
     from datetime import timedelta
     start_dt, end_dt, _ = resolve_period(start, end)
@@ -48,7 +50,7 @@ def report_summary(start: Optional[date] = None, end: Optional[date] = None, db:
     }
 
 
-@router.get("/export.csv")
+@router.get("/export.csv", dependencies=[Depends(require_supervisor)])
 def export_csv(start: Optional[date] = None, end: Optional[date] = None, db: Session = Depends(get_db)):
     start_dt, end_dt, _ = resolve_period(start, end)
     rows = in_period(db.query(Transaction), start_dt, end_dt).order_by(Transaction.created_at).all()

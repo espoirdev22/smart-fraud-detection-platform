@@ -6,6 +6,15 @@ from app.main import app
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def _no_auth():
+    """Ces tests visent le modele, pas la connexion : on laisse passer le gardien."""
+    from app.core.deps import get_current_user
+    app.dependency_overrides[get_current_user] = lambda: None
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200

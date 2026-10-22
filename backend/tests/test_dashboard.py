@@ -11,6 +11,7 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.main import app  # noqa: E402
+from app.core.config import settings  # noqa: E402
 from app.db.database import SessionLocal  # noqa: E402
 from app.db.models import Transaction  # noqa: E402
 import app.routers.predict as predict_router  # noqa: E402
@@ -28,6 +29,8 @@ def client(monkeypatch):
         with SessionLocal() as db:
             db.query(Transaction).delete()
             db.commit()
+        login = c.post("/auth/login", json={"email": settings.admin_email, "password": settings.admin_password})
+        c.headers["Authorization"] = f"Bearer {login.json()['access_token']}"
         yield c
 
 

@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.deps import require_supervisor
 from app.db.database import get_db
 from app.db.models import Transaction
 from app.services.common import iso
@@ -19,7 +20,7 @@ class ThresholdsBody(BaseModel):
     block: float
 
 
-@router.get("/settings")
+@router.get("/settings", dependencies=[Depends(require_supervisor)])
 def read_settings(db: Session = Depends(get_db)):
     return {
         "thresholds": get_thresholds(db),
@@ -29,7 +30,7 @@ def read_settings(db: Session = Depends(get_db)):
 
 
 @router.put("/settings/thresholds")
-def update_thresholds(body: ThresholdsBody, db: Session = Depends(get_db)):
+def update_thresholds(body: ThresholdsBody, db: Session = Depends(get_db), _user=Depends(require_supervisor)):
     if not (0 < body.verify < body.block < 1):
         raise HTTPException(400, "Les seuils doivent verifier 0 < verification < blocage < 1.")
     return {"thresholds": set_thresholds(db, round(body.verify, 4), round(body.block, 4))}

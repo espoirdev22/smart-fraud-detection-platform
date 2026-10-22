@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     verify_threshold: float = float(os.getenv("VERIFY_THRESHOLD", "0.5"))
     block_threshold: float = float(os.getenv("BLOCK_THRESHOLD", "0.93"))
 
+    # Authentification. Sans SECRET_KEY dans l'environnement, une cle aleatoire est tiree
+    # a chaque demarrage (les sessions sautent quand le conteneur redemarre).
+    secret_key: str = os.getenv("SECRET_KEY", "")
+    token_minutes: int = int(os.getenv("TOKEN_MINUTES", "480"))
+    admin_email: str = os.getenv("ADMIN_EMAIL", "salou@fraudguard.local")
+    admin_password: str = os.getenv("ADMIN_PASSWORD", "ChangeMe123!")
+
     class Config:
         env_file = ".env"
 

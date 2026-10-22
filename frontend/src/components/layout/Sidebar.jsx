@@ -1,5 +1,6 @@
 import { Bell, CreditCard, Cpu, FileText, LayoutDashboard, Settings, ShieldCheck, Users, X } from "lucide-react";
 import { fmtDateTime } from "../../lib/format";
+import { canSee } from "../../lib/roles";
 
 export const NAV = [
   { path: "/", label: "Tableau de bord", icon: LayoutDashboard },
@@ -11,7 +12,7 @@ export const NAV = [
   { path: "/settings", label: "Paramètres", icon: Settings },
 ];
 
-export default function Sidebar({ current, onNavigate, alertCount, status, refreshedAt, open, onClose }) {
+export default function Sidebar({ role, current, onNavigate, alertCount, status, refreshedAt, open, onClose }) {
   const ok = status?.operational;
   const known = status !== null && status !== undefined;
   return (
@@ -36,7 +37,7 @@ export default function Sidebar({ current, onNavigate, alertCount, status, refre
         </div>
 
         <nav className="mt-2 flex-1 space-y-1 px-4">
-          {NAV.map(({ path, label, icon: Icon, badge }) => {
+          {NAV.filter((item) => canSee(role, item.path)).map(({ path, label, icon: Icon, badge }) => {
             const active = current === path;
             return (
               <button

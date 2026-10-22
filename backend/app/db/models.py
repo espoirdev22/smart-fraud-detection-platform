@@ -36,6 +36,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     email = Column(String)
+    password_hash = Column(String)
     role = Column(String, nullable=False, default="Analyste Fraude")
     active = Column(Boolean, nullable=False, default=True, server_default=text("true"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())

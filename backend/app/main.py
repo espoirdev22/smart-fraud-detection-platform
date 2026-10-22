@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import predict, transactions, statistics, alerts, dashboard, models_info, reports, users, settings_router
+from app.routers import predict, transactions, statistics, alerts, dashboard, models_info, reports, users, settings_router, auth
+from app.core.deps import get_current_user
 from app.db.database import engine, Base
 from app.db import models
 from app.db.migrate import migrate_schema
@@ -25,15 +26,13 @@ app.add_middleware(
 )
 Instrumentator().instrument(app).expose(app)
 
-app.include_router(predict.router)
-app.include_router(transactions.router)
-app.include_router(statistics.router)
-app.include_router(alerts.router)
-app.include_router(dashboard.router)
-app.include_router(models_info.router)
-app.include_router(reports.router)
-app.include_router(users.router)
-app.include_router(settings_router.router)
+app.include_router(auth.router)  # /auth/login est la seule porte ouverte
+
+# Tout le reste exige un badge valide (jeton de connexion).
+protected = [Depends(get_current_user)]
+for r in (predict.router, transactions.router, statistics.router, alerts.router, dashboard.router,
+          models_info.router, reports.router, users.router, settings_router.router):
+    app.include_router(r, dependencies=protected)
 
 
 @app.on_event("startup")
